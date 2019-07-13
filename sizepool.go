@@ -87,13 +87,11 @@ func (p *sizePool) Get() (interface{}, error) {
 func (p *sizePool) BGet(interval time.Duration) (interface{}, error) {
 	ticker := time.NewTicker(interval)
 	for {
-		select {
-		case _ = <-ticker.C:
-			p.mu.Lock()
-			item := p.pool.Front()
-			if item != nil {
-				p.pool.Remove(item)
-			}
+		<-ticker.C
+		p.mu.Lock()
+		item := p.pool.Front()
+		if item != nil {
+			p.pool.Remove(item)
 			p.mu.Unlock()
 			return item.Value, nil
 		}

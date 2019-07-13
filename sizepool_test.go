@@ -75,7 +75,9 @@ func BenchmarkSizePool_Get(b *testing.B) {
 	p := NewPool(65535, newConn, resetConn)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		p.Get()
+		if _, err := p.Get(); err != nil {
+			b.Log(err)
+		}
 	}
 }
 
@@ -83,7 +85,9 @@ func BenchmarkSizePool_BGet(b *testing.B) {
 	p := NewPool(65535, newConn, resetConn)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		p.BGet(time.Nanosecond)
+		if _, err := p.BGet(time.Nanosecond); err != nil {
+			b.Log(err)
+		}
 	}
 }
 
