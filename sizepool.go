@@ -2,10 +2,11 @@
 package sizepool
 
 import (
-	"container/list"
 	"errors"
 	"sync"
 	"time"
+
+	"github.com/FelixSeptem/collections/queue"
 )
 
 const (
@@ -22,7 +23,7 @@ type sizePool struct {
 	initsize int64
 	new      func() interface{}
 	reset    func(interface{})
-	pool     *list.List
+	pool     *queue.Queue
 }
 
 // init a new size pool and return it
@@ -35,7 +36,7 @@ func NewPool(size int64, new func() interface{}, reset func(interface{})) *sizeP
 		initsize: size,
 		new:      new,
 		reset:    reset,
-		pool:     list.New(),
+		pool:     queue.NewQueue(int(size)),
 	}
 	sp.constructNewItem()
 	return sp
@@ -43,17 +44,15 @@ func NewPool(size int64, new func() interface{}, reset func(interface{})) *sizeP
 
 // construct new item and return it to channel
 func (p *sizePool) constructNewItem() {
-	var (
-		ch = make(chan interface{}, p.initsize)
-	)
+	wg := sync.WaitGroup{}
 	for i := 0; int64(i) < p.initsize; i++ {
+		wg.Add(1)
 		go func() {
-			ch <- p.new()
+			p.pool.Push(p.new())
+			wg.Done()
 		}()
 	}
-	for i := 0; int64(i) < p.initsize; i++ {
-		p.pool.PushBack(<-ch)
-	}
+	wg.Wait()
 }
 
 // get size pool init size
@@ -72,15 +71,9 @@ func (p *sizePool) Get() (interface{}, error) {
 	}
 	p.mu.RUnlock()
 
-	p.mu.Lock()
-	item := p.pool.Front()
-	if item == nil {
-		return nil, ErrNoEnoughItem
-	}
-	p.pool.Remove(item)
-	p.mu.Unlock()
+	item := p.pool.Pop()
 
-	return item.Value, nil
+	return item, nil
 }
 
 // try to get a new item from the size pool every interval time,be blocked before get the item
@@ -88,12 +81,9 @@ func (p *sizePool) BGet(interval time.Duration) (interface{}, error) {
 	ticker := time.NewTicker(interval)
 	for {
 		<-ticker.C
-		p.mu.Lock()
-		item := p.pool.Front()
+		item := p.pool.Pop()
 		if item != nil {
-			p.pool.Remove(item)
-			p.mu.Unlock()
-			return item.Value, nil
+			return item, nil
 		}
 	}
 }
@@ -102,6 +92,6 @@ func (p *sizePool) BGet(interval time.Duration) (interface{}, error) {
 func (p *sizePool) Put(i interface{}) {
 	p.reset(i)
 	p.mu.Lock()
-	p.pool.PushBack(i)
+	p.pool.Push(i)
 	p.mu.Unlock()
 }

@@ -53,8 +53,8 @@ func TestSizePool_Put(t *testing.T) {
 	p := NewPool(1024, newConn, resetConn)
 
 	p.Put(new(fakeConn))
-	assert.Equal(t, 1025, p.pool.Len())
-	assert.Equal(t, new(fakeConn), p.pool.Back().Value.(*fakeConn))
+	assert.Equal(t, 1024, p.pool.Len())
+	assert.Equal(t, new(fakeConn), p.pool.GetTail().(*fakeConn))
 }
 
 func TestSizePool_BGet(t *testing.T) {
