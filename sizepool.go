@@ -55,8 +55,7 @@ func (p *sizePool) constructNewItem() {
 
 // get size pool init size
 func (p *sizePool) InitSize() int64 {
-	s := p.initsize
-	return s
+	return p.initsize
 }
 
 // get a new item from the size pool, return ErrNoEnoughItem when the size pool don't have any item
@@ -64,7 +63,6 @@ func (p *sizePool) Get() (interface{}, error) {
 	if p.pool.Len() == 0 {
 		return nil, ErrNoEnoughItem
 	}
-
 	item := p.pool.Pop()
 
 	return item, nil
