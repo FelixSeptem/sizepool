@@ -19,7 +19,6 @@ var (
 
 // define the size pool entity
 type sizePool struct {
-	mu       sync.RWMutex
 	initsize int64
 	new      func() interface{}
 	reset    func(interface{})
@@ -32,7 +31,6 @@ func NewPool(size int64, new func() interface{}, reset func(interface{})) *sizeP
 		size = DEFAULT_POOLSIZE
 	}
 	sp := &sizePool{
-		mu:       sync.RWMutex{},
 		initsize: size,
 		new:      new,
 		reset:    reset,
@@ -57,19 +55,15 @@ func (p *sizePool) constructNewItem() {
 
 // get size pool init size
 func (p *sizePool) InitSize() int64 {
-	p.mu.RLock()
 	s := p.initsize
-	p.mu.RUnlock()
 	return s
 }
 
 // get a new item from the size pool, return ErrNoEnoughItem when the size pool don't have any item
 func (p *sizePool) Get() (interface{}, error) {
-	p.mu.RLock()
 	if p.pool.Len() == 0 {
 		return nil, ErrNoEnoughItem
 	}
-	p.mu.RUnlock()
 
 	item := p.pool.Pop()
 
@@ -91,7 +85,5 @@ func (p *sizePool) BGet(interval time.Duration) (interface{}, error) {
 // put the item back to the size pool, before put the item back, will run reset to clean the item
 func (p *sizePool) Put(i interface{}) {
 	p.reset(i)
-	p.mu.Lock()
 	p.pool.Push(i)
-	p.mu.Unlock()
 }
