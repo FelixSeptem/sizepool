@@ -48,10 +48,11 @@ func (p *sizePoolChan) InitSize() int64 {
 
 // try to get a new item from the size pool be blocked before get the item
 func (p *sizePoolChan) BGet(timeout time.Duration) (interface{}, error) {
+	ticker := time.NewTicker(timeout)
 	select {
 	case i := <-p.pool:
 		return i, nil
-	case <-time.Tick(timeout):
+	case <-ticker.C:
 		return nil, ErrNoEnoughItem
 	}
 }
