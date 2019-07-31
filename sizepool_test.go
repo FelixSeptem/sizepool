@@ -109,13 +109,9 @@ func BenchmarkSizePool_Put(b *testing.B) {
 }
 
 func BenchmarkSizePoolChan_BGet(b *testing.B) {
-	b.SkipNow()
 	p := NewChanPool(65535, newConn, resetConn)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if i > 100000 {
-			close(p.pool)
-		}
 		if _, err := p.BGet(time.Millisecond); err != nil {
 			_ = err
 		}
