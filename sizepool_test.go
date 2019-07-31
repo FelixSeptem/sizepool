@@ -65,6 +65,14 @@ func TestSizePool_BGet(t *testing.T) {
 	assert.Equal(t, new(fakeConn), i.(*fakeConn))
 }
 
+func TestSizePoolChan_BGet(t *testing.T) {
+	p := NewChanPool(1024, newConn, resetConn)
+
+	i, err := p.BGet(time.Millisecond * 50)
+	assert.NoError(t, err)
+	assert.Equal(t, new(fakeConn), i.(*fakeConn))
+}
+
 func BenchmarkNewPool(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		NewPool(1024, newConn, resetConn)
@@ -76,7 +84,7 @@ func BenchmarkSizePool_Get(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		if _, err := p.Get(); err != nil {
-			b.Log(err)
+			_ = err
 		}
 	}
 }
@@ -86,13 +94,36 @@ func BenchmarkSizePool_BGet(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		if _, err := p.BGet(time.Nanosecond); err != nil {
-			b.Log(err)
+			_ = err
 		}
 	}
 }
 
 func BenchmarkSizePool_Put(b *testing.B) {
 	p := NewPool(1, newConn, resetConn)
+	fc := new(fakeConn)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		p.Put(fc)
+	}
+}
+
+func BenchmarkSizePoolChan_BGet(b *testing.B) {
+	b.SkipNow()
+	p := NewChanPool(65535, newConn, resetConn)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if i > 100000 {
+			close(p.pool)
+		}
+		if _, err := p.BGet(time.Millisecond); err != nil {
+			_ = err
+		}
+	}
+}
+
+func BenchmarkSizePoolChan_Put(b *testing.B) {
+	p := NewChanPool(10000, newConn, resetConn)
 	fc := new(fakeConn)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

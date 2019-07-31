@@ -70,9 +70,8 @@ func (p *sizePool) Get() (interface{}, error) {
 
 // try to get a new item from the size pool every interval time,be blocked before get the item
 func (p *sizePool) BGet(interval time.Duration) (interface{}, error) {
-	ticker := time.NewTicker(interval)
 	for {
-		<-ticker.C
+		<-time.Tick(interval)
 		item := p.pool.Pop()
 		if item != nil {
 			return item, nil
@@ -84,4 +83,10 @@ func (p *sizePool) BGet(interval time.Duration) (interface{}, error) {
 func (p *sizePool) Put(i interface{}) {
 	p.reset(i)
 	p.pool.Push(i)
+}
+
+func (p *sizePool) Close() {
+	for p.pool.Len() > 0 {
+		p.pool.Pop()
+	}
 }
