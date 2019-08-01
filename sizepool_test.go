@@ -110,9 +110,11 @@ func BenchmarkSizePool_Put(b *testing.B) {
 
 func BenchmarkSizePoolChan_BGet(b *testing.B) {
 	p := NewChanPool(65535, newConn, resetConn)
+	fc := new(fakeConn)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if _, err := p.BGet(time.Millisecond); err != nil {
+		p.Put(fc)
+		if _, err := p.BGet(time.Nanosecond); err != nil {
 			_ = err
 		}
 	}
